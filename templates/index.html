@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔬 LlamaIndex vs LangChain — Test Lab</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0e17;
+            color: #e6edf3;
+            min-height: 100vh;
+        }
+
+        /* ── Header ── */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 2.5rem 2rem;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+        }
+        .header h1 { font-size: 2rem; font-weight: 700; }
+        .header p { margin-top: 0.5rem; opacity: 0.9; font-size: 1rem; }
+
+        /* ── Container ── */
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+
+        /* ── Cards ── */
+        .card {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .card h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* ── Grid ── */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+        @media (max-width: 768px) {
+            .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+        }
+
+        /* ── Form Elements ── */
+        label {
+            display: block;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.7;
+            margin-bottom: 0.5rem;
+        }
+        input[type="text"], select, textarea {
+            width: 100%;
+            background: #0d1117;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            color: #e6edf3;
+            font-family: inherit;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        input:focus, select:focus, textarea:focus {
+            border-color: #667eea;
+        }
+        textarea { resize: vertical; min-height: 100px; }
+        select { cursor: pointer; }
+        input[type="range"] {
+            width: 100%;
+            accent-color: #667eea;
+            margin-top: 0.3rem;
+        }
+
+        /* ── File Upload ── */
+        .upload-zone {
+            border: 2px dashed rgba(102, 126, 234, 0.4);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: rgba(102, 126, 234, 0.05);
+        }
+        .upload-zone:hover, .upload-zone.dragover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.12);
+        }
+        .upload-zone .icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        .upload-zone p { opacity: 0.7; font-size: 0.9rem; }
+        .upload-zone input[type="file"] { display: none; }
+        .file-list { margin-top: 0.8rem; }
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.8rem;
+            background: rgba(0,212,170,0.1);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            margin-top: 0.4rem;
+            color: #00d4aa;
+        }
+        .file-item .remove-btn {
+            margin-left: auto;
+            cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+        .file-item .remove-btn:hover { opacity: 1; }
+
+        /* ── Button ── */
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 1rem 2rem;
+            color: white;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 30px rgba(102, 126, 234, 0.5);
+        }
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ── Spinner ── */
+        .spinner-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 14, 23, 0.85);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .spinner-overlay.active { display: flex; }
+        .spinner {
+            width: 60px; height: 60px;
+            border: 4px solid rgba(102, 126, 234, 0.2);
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner-text {
+            font-size: 1.1rem;
+            opacity: 0.8;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        @keyframes pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+
+        /* ── Results ── */
+        #results { display: none; }
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin: 2rem 0 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 1.2rem;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+        .metric-card:hover { transform: translateY(-2px); }
+        .metric-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.7;
+            margin-bottom: 0.8rem;
+        }
+        .metric-row {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .metric-col { text-align: center; }
+        .metric-col .label { font-size: 0.65rem; margin-bottom: 0.2rem; }
+        .metric-col .value { font-size: 1.4rem; font-weight: 700; }
+        .llama-color { color: #00d4aa; }
+        .lang-color { color: #ff6b6b; }
+        .vs-divider { font-size: 1rem; opacity: 0.3; }
+
+        .winner-badge {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            margin-top: 0.6rem;
+        }
+        .winner-badge.green {
+            background: rgba(0, 212, 170, 0.15);
+            color: #00d4aa;
+            border: 1px solid rgba(0, 212, 170, 0.3);
+        }
+        .winner-badge.red {
+            background: rgba(255, 107, 107, 0.15);
+            color: #ff6b6b;
+            border: 1px solid rgba(255, 107, 107, 0.3);
+        }
+        .winner-badge.neutral {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ccc;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .answer-box {
+            background: #0d1117;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            min-height: 120px;
+        }
+        .answer-header {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.8rem;
+        }
+
+        .source-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 0.8rem;
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            color: #c9d1d9;
+        }
+        .source-card strong { color: #e6edf3; }
+
+        /* ── Overall Winner ── */
+        .overall-winner {
+            text-align: center;
+            padding: 2rem;
+            border-radius: 16px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin: 1.5rem 0;
+        }
+        .overall-winner.llama-wins {
+            background: linear-gradient(135deg, rgba(0,212,170,0.1), rgba(0,212,170,0.05));
+            border: 1px solid rgba(0,212,170,0.3);
+            color: #00d4aa;
+        }
+        .overall-winner.lang-wins {
+            background: linear-gradient(135deg, rgba(255,107,107,0.1), rgba(255,107,107,0.05));
+            border: 1px solid rgba(255,107,107,0.3);
+            color: #ff6b6b;
+        }
+        .overall-winner.tie {
+            background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+            border: 1px solid rgba(255,255,255,0.15);
+            color: #ccc;
+        }
+
+        .score-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .score-card {
+            text-align: center;
+            padding: 1rem;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .score-card .score-value { font-size: 2rem; font-weight: 700; }
+        .score-card .score-label { font-size: 0.8rem; opacity: 0.7; margin-top: 0.3rem; }
+
+        /* ── Export ── */
+        .btn-export {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 10px;
+            padding: 0.7rem 1.5rem;
+            color: #e6edf3;
+            font-family: inherit;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-export:hover { background: rgba(255,255,255,0.12); }
+
+        /* ── Error ── */
+        .error-box {
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            border-radius: 12px;
+            padding: 1.2rem;
+            color: #ff6b6b;
+            margin-bottom: 1rem;
+        }
+        .error-box pre {
+            background: #0d1117;
+            padding: 0.8rem;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            overflow-x: auto;
+            margin-top: 0.5rem;
+            color: #c9d1d9;
+        }
+
+        /* ── Footer ── */
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            opacity: 0.4;
+            font-size: 0.8rem;
+        }
+
+        /* ── Bar Chart ── */
+        .bar-chart { margin: 1rem 0; }
+        .bar-row {
+            display: grid;
+            grid-template-columns: 100px 1fr 1fr;
+            gap: 0.5rem;
+            align-items: center;
+            margin-bottom: 0.6rem;
+        }
+        .bar-row .bar-label {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            text-align: right;
+        }
+        .bar-wrapper {
+            height: 28px;
+            border-radius: 6px;
+            overflow: hidden;
+            background: rgba(255,255,255,0.04);
+        }
+        .bar-fill {
+            height: 100%;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            padding: 0 0.5rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            min-width: fit-content;
+            transition: width 0.8s ease-out;
+        }
+        .bar-fill.llama { background: linear-gradient(90deg, #00d4aa, #00b894); }
+        .bar-fill.lang { background: linear-gradient(90deg, #ff6b6b, #ee5a24); }
+
+        .range-value {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #667eea;
+            margin-left: 0.5rem;
+        }
+
+        /* ── Summary Table ── */
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            margin: 1rem 0;
+        }
+        .summary-table th, .summary-table td {
+            padding: 0.7rem 1rem;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .summary-table th {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.7;
+        }
+        .summary-table td:first-child { text-align: left; font-weight: 500; }
+        .summary-table tr:hover { background: rgba(255,255,255,0.03); }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <div class="header">
+        <h1>🔬 LlamaIndex vs LangChain — Test Lab</h1>
+        <p>Ücretsiz & Yerel — Ollama ile dokümanlarınızı karşılaştırın</p>
+    </div>
+
+    <!-- Spinner -->
+    <div class="spinner-overlay" id="spinner">
+        <div class="spinner"></div>
+        <div class="spinner-text">Her iki framework ile işleniyor… Bu biraz zaman alabilir.</div>
+    </div>
+
+    <div class="container">
+        <form id="compareForm" enctype="multipart/form-data">
+
+            <!-- Settings + Upload Row -->
+            <div class="grid-2">
+                <!-- Left: File Upload + Query -->
+                <div>
+                    <div class="card">
+                        <h2>📂 Doküman Yükleme</h2>
+                        <div class="upload-zone" id="uploadZone">
+                            <div class="icon">📄</div>
+                            <p>Dosyalarınızı sürükleyin veya tıklayın</p>
+                            <p style="font-size:0.75rem; margin-top:0.3rem; opacity:0.5;">PDF, TXT, MD — Maks. 50MB</p>
+                            <input type="file" id="fileInput" name="files" multiple accept=".pdf,.txt,.md">
+                        </div>
+                        <div class="file-list" id="fileList"></div>
+                    </div>
+
+                    <div class="card">
+                        <h2>💬 Soru Sorun</h2>
+                        <textarea name="query" placeholder="Örnek: Bu doküman ne hakkında? Temel konuları özetle."></textarea>
+                    </div>
+                </div>
+
+                <!-- Right: Settings -->
+                <div>
+                    <div class="card">
+                        <h2>⚙️ Ayarlar</h2>
+                        <div style="margin-bottom:1rem;">
+                            <label>🌐 Ollama URL</label>
+                            <input type="text" name="ollama_url" value="http://localhost:11434">
+                        </div>
+                        <div style="margin-bottom:1rem;">
+                            <label>🤖 Ollama Model</label>
+                            <select name="model">
+                                <option value="llama3.2" selected>llama3.2</option>
+                                <option value="llama3.1">llama3.1</option>
+                                <option value="llama3">llama3</option>
+                                <option value="mistral">mistral</option>
+                                <option value="gemma2">gemma2</option>
+                                <option value="phi3">phi3</option>
+                                <option value="qwen2.5">qwen2.5</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h2>📐 LangChain Ayarları</h2>
+                        <div style="margin-bottom:1rem;">
+                            <label>Chunk Boyutu <span class="range-value" id="chunkSizeVal">1000</span></label>
+                            <input type="range" name="chunk_size" min="200" max="4000" step="100" value="1000"
+                                oninput="document.getElementById('chunkSizeVal').textContent=this.value">
+                        </div>
+                        <div>
+                            <label>Chunk Overlap <span class="range-value" id="chunkOverlapVal">200</span></label>
+                            <input type="range" name="chunk_overlap" min="0" max="500" step="50" value="200"
+                                oninput="document.getElementById('chunkOverlapVal').textContent=this.value">
+                        </div>
+                    </div>
+                    <div class="card" style="background: linear-gradient(135deg, #1e3a5f 0%, #1a1a2e 100%); border-color: rgba(102,126,234,0.3); color: #a8c8ff; font-size:0.85rem;">
+                        <strong>💡 Nasıl Kullanılır?</strong><br><br>
+                        1. Ollama'yı kurun → <code>brew install ollama</code><br>
+                        2. Model indirin → <code>ollama pull llama3.2</code><br>
+                        3. Ollama'yı başlatın → <code>ollama serve</code><br>
+                        4. Doküman yükleyin & soru yazın → 🚀
+                    </div>
+                </div>
+            </div>
+
+            <!-- Run Button -->
+            <button type="submit" class="btn-primary" id="runBtn">
+                🚀 Karşılaştır — Her İki Framework ile İşle
+            </button>
+        </form>
+
+        <!-- ═══════ Results ═══════ -->
+        <div id="results">
+
+            <!-- Errors -->
+            <div id="errorContainer"></div>
+
+            <!-- Metric cards -->
+            <div class="section-title">📊 Karşılaştırma Sonuçları</div>
+            <div class="grid-4" id="metricCards"></div>
+
+            <!-- Bar chart -->
+            <div class="section-title">📈 Süre Karşılaştırması</div>
+            <div class="card">
+                <div class="bar-chart" id="barChart"></div>
+            </div>
+
+            <!-- Answers -->
+            <div class="section-title">💡 Cevapların Karşılaştırması</div>
+            <div class="grid-2">
+                <div>
+                    <div class="answer-header llama-color">🦙 LlamaIndex Cevabı</div>
+                    <div class="answer-box" id="llamaAnswer"></div>
+                </div>
+                <div>
+                    <div class="answer-header lang-color">🦜 LangChain Cevabı</div>
+                    <div class="answer-box" id="langAnswer"></div>
+                </div>
+            </div>
+
+            <!-- Sources -->
+            <div class="section-title">📚 Kaynak Dokümanlar</div>
+            <div class="grid-2">
+                <div>
+                    <strong class="llama-color">🦙 LlamaIndex Kaynakları</strong>
+                    <div id="llamaSources"></div>
+                </div>
+                <div>
+                    <strong class="lang-color">🦜 LangChain Kaynakları</strong>
+                    <div id="langSources"></div>
+                </div>
+            </div>
+
+            <!-- Summary Table -->
+            <div class="section-title">📋 Detaylı Özet Tablosu</div>
+            <div class="card" style="overflow-x:auto;">
+                <table class="summary-table" id="summaryTable"></table>
+            </div>
+
+            <!-- Overall Winner -->
+            <div id="overallWinner"></div>
+
+            <!-- Export -->
+            <div style="text-align:center; margin: 1.5rem 0;">
+                <button class="btn-export" id="exportBtn">📥 JSON olarak indir</button>
+            </div>
+        </div>
+
+        <div class="footer">🔬 LlamaIndex vs LangChain Test Lab — Ücretsiz & Yerel (Ollama)</div>
+    </div>
+
+    <script>
+        // ── File Upload Logic ──
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('fileList');
+        let selectedFiles = [];
+
+        uploadZone.addEventListener('click', () => fileInput.click());
+        uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+        uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            addFiles(e.dataTransfer.files);
+        });
+        fileInput.addEventListener('change', () => addFiles(fileInput.files));
+
+        function addFiles(files) {
+            for (const f of files) {
+                if (!selectedFiles.some(sf => sf.name === f.name && sf.size === f.size)) {
+                    selectedFiles.push(f);
+                }
+            }
+            renderFileList();
+        }
+
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            renderFileList();
+        }
+
+        function renderFileList() {
+            fileList.innerHTML = selectedFiles.map((f, i) =>
+                `<div class="file-item">
+                    📄 ${f.name} — ${(f.size/1024).toFixed(1)} KB
+                    <span class="remove-btn" onclick="removeFile(${i})">✕</span>
+                </div>`
+            ).join('');
+        }
+
+        // ── Form Submit ──
+        let lastResultData = null;
+
+        document.getElementById('compareForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (selectedFiles.length === 0) {
+                alert('Lütfen en az bir dosya yükleyin!');
+                return;
+            }
+
+            const query = e.target.query.value.trim();
+            if (!query) {
+                alert('Lütfen bir soru yazın!');
+                return;
+            }
+
+            const formData = new FormData();
+            selectedFiles.forEach(f => formData.append('files', f));
+            formData.append('query', query);
+            formData.append('model', e.target.model.value);
+            formData.append('ollama_url', e.target.ollama_url.value);
+            formData.append('chunk_size', e.target.chunk_size.value);
+            formData.append('chunk_overlap', e.target.chunk_overlap.value);
+
+            document.getElementById('spinner').classList.add('active');
+            document.getElementById('runBtn').disabled = true;
+            document.getElementById('results').style.display = 'none';
+
+            try {
+                const resp = await fetch('/compare', { method: 'POST', body: formData });
+                const data = await resp.json();
+
+                if (data.error) {
+                    alert('Hata: ' + data.error);
+                    return;
+                }
+
+                lastResultData = data;
+                renderResults(data);
+                document.getElementById('results').style.display = 'block';
+                document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+            } catch (err) {
+                alert('Bağlantı hatası: ' + err.message);
+            } finally {
+                document.getElementById('spinner').classList.remove('active');
+                document.getElementById('runBtn').disabled = false;
+            }
+        });
+
+        // ── Render Results ──
+        function renderResults(data) {
+            const errorContainer = document.getElementById('errorContainer');
+            errorContainer.innerHTML = '';
+
+            // Show errors if any
+            if (data.llamaindex?.error) {
+                errorContainer.innerHTML += `<div class="error-box">
+                    <strong>❌ LlamaIndex Hatası:</strong> ${data.llamaindex.error}
+                    <pre>${data.llamaindex.traceback || ''}</pre>
+                </div>`;
+            }
+            if (data.langchain?.error) {
+                errorContainer.innerHTML += `<div class="error-box">
+                    <strong>❌ LangChain Hatası:</strong> ${data.langchain.error}
+                    <pre>${data.langchain.traceback || ''}</pre>
+                </div>`;
+            }
+
+            if (!data.llamaindex?.metrics || !data.langchain?.metrics) {
+                document.getElementById('metricCards').innerHTML = '';
+                document.getElementById('barChart').innerHTML = '';
+                document.getElementById('llamaAnswer').textContent = data.llamaindex?.answer || 'Hata oluştu';
+                document.getElementById('langAnswer').textContent = data.langchain?.answer || 'Hata oluştu';
+                document.getElementById('llamaSources').innerHTML = '';
+                document.getElementById('langSources').innerHTML = '';
+                document.getElementById('summaryTable').innerHTML = '';
+                document.getElementById('overallWinner').innerHTML = '';
+                return;
+            }
+
+            const lm = data.llamaindex.metrics;
+            const lcm = data.langchain.metrics;
+
+            // ── Metric Cards ──
+            const metrics = [
+                { label: '⏱ Toplam Süre', lv: lm.total_time, cv: lcm.total_time, unit: 's', lower: true },
+                { label: '📥 Yükleme', lv: lm.load_time, cv: lcm.load_time, unit: 's', lower: true },
+                { label: '🗂 İndeksleme', lv: lm.index_time, cv: lcm.index_time, unit: 's', lower: true },
+                { label: '🔍 Sorgu', lv: lm.query_time, cv: lcm.query_time, unit: 's', lower: true },
+                { label: '📦 Chunk', lv: lm.num_chunks, cv: lcm.num_chunks, unit: '', lower: false },
+                { label: '💾 Bellek', lv: lm.memory_used_mb, cv: lcm.memory_used_mb, unit: 'MB', lower: true },
+                { label: '🔢 Cevap Token', lv: lm.answer_tokens, cv: lcm.answer_tokens, unit: '', lower: false },
+            ];
+
+            document.getElementById('metricCards').innerHTML = metrics.map(m => {
+                let icon, cls;
+                if (m.lower ? m.lv < m.cv : m.lv > m.cv) { icon = '🦙'; cls = 'green'; }
+                else if (m.lower ? m.cv < m.lv : m.cv > m.lv) { icon = '🦜'; cls = 'red'; }
+                else { icon = '🤝'; cls = 'neutral'; }
+                return `<div class="metric-card">
+                    <div class="metric-label">${m.label}</div>
+                    <div class="metric-row">
+                        <div class="metric-col">
+                            <div class="label llama-color">🦙 LlamaIndex</div>
+                            <div class="value llama-color">${m.lv}${m.unit}</div>
+                        </div>
+                        <div class="vs-divider">vs</div>
+                        <div class="metric-col">
+                            <div class="label lang-color">🦜 LangChain</div>
+                            <div class="value lang-color">${m.cv}${m.unit}</div>
+                        </div>
+                    </div>
+                    <span class="winner-badge ${cls}">Kazanan: ${icon}</span>
+                </div>`;
+            }).join('');
+
+            // ── Bar Chart ──
+            const barData = [
+                { label: 'Yükleme', l: lm.load_time, c: lcm.load_time },
+                { label: 'İndeksleme', l: lm.index_time, c: lcm.index_time },
+                { label: 'Sorgu', l: lm.query_time, c: lcm.query_time },
+                { label: 'Toplam', l: lm.total_time, c: lcm.total_time },
+            ];
+            const maxTime = Math.max(...barData.map(d => Math.max(d.l, d.c))) || 1;
+            document.getElementById('barChart').innerHTML = barData.map(d => {
+                const lPct = Math.max((d.l / maxTime) * 100, 5);
+                const cPct = Math.max((d.c / maxTime) * 100, 5);
+                return `<div class="bar-row">
+                    <div class="bar-label">${d.label}</div>
+                    <div class="bar-wrapper"><div class="bar-fill llama" style="width:${lPct}%">${d.l}s</div></div>
+                    <div class="bar-wrapper"><div class="bar-fill lang" style="width:${cPct}%">${d.c}s</div></div>
+                </div>`;
+            }).join('')
+            + `<div class="bar-row" style="opacity:0.5; font-size:0.75rem;">
+                <div></div><div style="text-align:center;">🦙 LlamaIndex</div><div style="text-align:center;">🦜 LangChain</div>
+            </div>`;
+
+            // ── Answers ──
+            document.getElementById('llamaAnswer').textContent = data.llamaindex.answer;
+            document.getElementById('langAnswer').textContent = data.langchain.answer;
+
+            // ── Sources ──
+            const llamaSrc = lm.source_nodes || [];
+            document.getElementById('llamaSources').innerHTML = llamaSrc.length
+                ? llamaSrc.map((n, i) => `<div class="source-card"><strong>Kaynak ${i+1}${n.score ? ' (skor: '+n.score+')' : ''}</strong><br>${n.text_preview}</div>`).join('')
+                : '<div class="source-card">Kaynak bilgisi mevcut değil</div>';
+
+            const langSrc = lcm.source_docs || [];
+            document.getElementById('langSources').innerHTML = langSrc.length
+                ? langSrc.map((d, i) => `<div class="source-card"><strong>Kaynak ${i+1} (${d.source}, sayfa: ${d.page})</strong><br>${d.text_preview}</div>`).join('')
+                : '<div class="source-card">Kaynak bilgisi mevcut değil</div>';
+
+            // ── Summary Table ──
+            const tableRows = [
+                ['Yükleme Süresi (s)', lm.load_time, lcm.load_time, true],
+                ['İndeksleme Süresi (s)', lm.index_time, lcm.index_time, true],
+                ['Sorgu Süresi (s)', lm.query_time, lcm.query_time, true],
+                ['Toplam Süre (s)', lm.total_time, lcm.total_time, true],
+                ['Chunk Sayısı', lm.num_chunks, lcm.num_chunks, false],
+                ['Toplam Karakter', lm.total_chars, lcm.total_chars, false],
+                ['Input Token', lm.total_tokens_input, lcm.total_tokens_input, false],
+                ['Cevap Token', lm.answer_tokens, lcm.answer_tokens, false],
+                ['Bellek Kullanımı (MB)', lm.memory_used_mb, lcm.memory_used_mb, true],
+            ];
+            document.getElementById('summaryTable').innerHTML =
+                `<tr><th>Metrik</th><th>🦙 LlamaIndex</th><th>🦜 LangChain</th><th>Kazanan</th></tr>` +
+                tableRows.map(([label, vl, vc, lb]) => {
+                    let w = '🤝';
+                    if (lb ? vl < vc : vl > vc) w = '🦙';
+                    else if (lb ? vc < vl : vc > vl) w = '🦜';
+                    return `<tr><td>${label}</td><td>${vl}</td><td>${vc}</td><td>${w}</td></tr>`;
+                }).join('');
+
+            // ── Overall Winner ──
+            const s = data.summary;
+            if (s) {
+                const winnerDiv = document.getElementById('overallWinner');
+                let cls, text;
+                if (s.llama_wins > s.lang_wins) {
+                    cls = 'llama-wins';
+                    text = `🏆 Genel Kazanan: 🦙 LlamaIndex — ${s.llama_wins}/7 metrikte daha iyi!`;
+                } else if (s.lang_wins > s.llama_wins) {
+                    cls = 'lang-wins';
+                    text = `🏆 Genel Kazanan: 🦜 LangChain — ${s.lang_wins}/7 metrikte daha iyi!`;
+                } else {
+                    cls = 'tie';
+                    text = `🤝 Berabere! Her iki framework da eşit performans gösterdi.`;
+                }
+                winnerDiv.innerHTML = `
+                    <div class="score-cards">
+                        <div class="score-card"><div class="score-value llama-color">${s.llama_wins}</div><div class="score-label">🦙 LlamaIndex Kazandığı</div></div>
+                        <div class="score-card"><div class="score-value lang-color">${s.lang_wins}</div><div class="score-label">🦜 LangChain Kazandığı</div></div>
+                        <div class="score-card"><div class="score-value">${s.ties}</div><div class="score-label">🤝 Berabere</div></div>
+                    </div>
+                    <div class="overall-winner ${cls}">${text}</div>`;
+            }
+        }
+
+        // ── Export ──
+        document.getElementById('exportBtn').addEventListener('click', () => {
+            if (!lastResultData) return;
+            const blob = new Blob([JSON.stringify(lastResultData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `comparison_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'_')}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+    </script>
+</body>
+</html>

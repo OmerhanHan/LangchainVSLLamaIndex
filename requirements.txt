@@ -14,7 +14,7 @@ chromadb>=1.0.0
 sentence-transformers>=5.0.0
 
 # ─── Web Arayüzü ───
-streamlit>=1.40.0
+flask>=3.0.0
 
 # ─── Yardımcı ───
 tiktoken>=0.8.0
