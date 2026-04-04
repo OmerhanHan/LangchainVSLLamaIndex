@@ -61,6 +61,32 @@ def get_memory_usage_mb() -> float:
     return process.memory_info().rss / 1024 / 1024
 
 
+def format_langchain_error(exc: Exception) -> str:
+    message = str(exc).strip() or exc.__class__.__name__
+    lowered = message.lower()
+    visual_related = any(
+        keyword in lowered
+        for keyword in (
+            "image",
+            "images",
+            "ocr",
+            "scanned",
+            "scan",
+            "visual",
+            "vision",
+        )
+    )
+
+    if visual_related:
+        return (
+            "LangChain bu dosyadaki görsel veya taranmış içeriği okuyamadı. "
+            "LlamaIndex bu tür içeriği işleyebildiği için sonuç üretmeye devam etti. "
+            "LangChain tarafı yalnızca metin tabanlı içeriği destekliyor; bu nedenle hata döndü."
+        )
+
+    return f"LangChain pipeline çalışırken hata oluştu: {message}"
+
+
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #  LlamaIndex Pipeline  (Ollama + HuggingFace)
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -271,7 +297,11 @@ def compare():
                 file_paths, query, model, ollama_url, chunk_size, chunk_overlap
             )
         except Exception as e:
-            results["langchain"] = {"error": str(e), "traceback": traceback.format_exc()}
+            results["langchain"] = {
+                "error": format_langchain_error(e),
+                "details": str(e),
+                "traceback": traceback.format_exc(),
+            }
 
         # ── Calculate winner ──
         if "metrics" in results.get("llamaindex", {}) and "metrics" in results.get("langchain", {}):

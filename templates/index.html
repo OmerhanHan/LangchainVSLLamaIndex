@@ -670,8 +670,14 @@
             if (!data.llamaindex?.metrics || !data.langchain?.metrics) {
                 document.getElementById('metricCards').innerHTML = '';
                 document.getElementById('barChart').innerHTML = '';
-                document.getElementById('llamaAnswer').textContent = data.llamaindex?.answer || 'Hata oluştu';
-                document.getElementById('langAnswer').textContent = data.langchain?.answer || 'Hata oluştu';
+                const llamaError = data.llamaindex?.error
+                    ? `Hata nedeni: ${data.llamaindex.error}`
+                    : 'Hata oluştu';
+                const langError = data.langchain?.error
+                    ? `Hata nedeni: ${data.langchain.error}`
+                    : 'Hata oluştu';
+                document.getElementById('llamaAnswer').textContent = data.llamaindex?.answer || llamaError;
+                document.getElementById('langAnswer').textContent = data.langchain?.answer || langError;
                 document.getElementById('llamaSources').innerHTML = '';
                 document.getElementById('langSources').innerHTML = '';
                 document.getElementById('summaryTable').innerHTML = '';
